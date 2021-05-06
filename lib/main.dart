@@ -5,10 +5,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/config/custom_route.dart';
 import 'package:flutter_instagram_clone/repositories/auth/auth_repository.dart';
+import 'package:flutter_instagram_clone/repositories/repositories.dart';
 import 'package:flutter_instagram_clone/screens/screens.dart';
 
 import 'blocs/blocs.dart';
 import 'blocs/simple_bloc_observer.dart';
+import 'repositories/user/user_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,13 @@ class MyApp extends StatelessWidget {
       providers: [
         RepositoryProvider<AuthRepository>(
           create: (_) => AuthRepository(),
-        )
+        ),
+        RepositoryProvider<UserRepository>(
+          create: (_) => UserRepository(),
+        ),
+        RepositoryProvider<StorageRepository>(
+          create: (_) => StorageRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

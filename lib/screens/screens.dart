@@ -7,3 +7,4 @@ export 'notifications/notifications.dart';
 export 'profile/profile_screen.dart';
 export 'search/search_screen.dart';
 export 'create_post/create_post.dart';
+export 'edit_profile/edit_profile_screen.dart';
