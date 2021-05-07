@@ -1,8 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/blocs/auth/auth_bloc.dart';
+import 'package:flutter_instagram_clone/cuibits/cubits.dart';
 import 'package:flutter_instagram_clone/repositories/post/post_repository.dart';
 import 'package:flutter_instagram_clone/repositories/repositories.dart';
+import 'package:flutter_instagram_clone/screens/screens.dart';
 import 'package:flutter_instagram_clone/widgets/widgtes.dart';
 
 import 'bloc/profile_bloc.dart';
@@ -25,7 +28,9 @@ class ProfileScreen extends StatefulWidget {
           userRepository: context.read<UserRepository>(),
           postRepository: context.read<PostRepository>(),
           authBloc: context.read<AuthBloc>(),
+          likedPostsCubit: context.read<LikedPostsCubit>(),
         )..add(ProfileLoadUser(userId: args.userId)),
+        child: ProfileScreen(),
       ),
     );
   }
@@ -36,17 +41,17 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  TabController _tabcontroller;
+  TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabcontroller = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabcontroller.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -69,9 +74,11 @@ class _ProfileScreenState extends State<ProfileScreen>
               if (state.isCurrentUser)
                 IconButton(
                   icon: const Icon(Icons.exit_to_app),
-                  onPressed: () =>
-                      context.read<AuthBloc>().add(AuthLogoutRequested()),
-                )
+                  onPressed: () {
+                    context.read<AuthBloc>().add(AuthLogoutRequested());
+                    context.read<LikedPostsCubit>().clearAllLikedPosts();
+                  },
+                ),
             ],
           ),
           body: _buildBody(state),
@@ -83,9 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildBody(ProfileState state) {
     switch (state.status) {
       case ProfileStatus.loading:
-        return Center(
-          child: CircularProgressIndicator(),
-        );
+        return Center(child: CircularProgressIndicator());
       default:
         return RefreshIndicator(
           onRefresh: () async {
@@ -100,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 0.0),
+                      padding: const EdgeInsets.fromLTRB(24.0, 32.0, 24.0, 0),
                       child: Row(
                         children: [
                           UserProfileImage(
@@ -108,37 +113,36 @@ class _ProfileScreenState extends State<ProfileScreen>
                             profileImageUrl: state.user.profileImageUrl,
                           ),
                           ProfileStats(
-                              isCurrentUser: state.isCurrentUser,
-                              isFollowing: state.isFollowing,
-                              posts: state.posts.length,
-                              followers: state.user.followers,
-                              following: state.user.following)
+                            isCurrentUser: state.isCurrentUser,
+                            isFollowing: state.isFollowing,
+                            posts: state.posts.length,
+                            followers: state.user.followers,
+                            following: state.user.following,
+                          ),
                         ],
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 30.0, vertical: 10.0),
+                        horizontal: 30.0,
+                        vertical: 10.0,
+                      ),
                       child: ProfileInfo(
                         username: state.user.username,
                         bio: state.user.bio,
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
               SliverToBoxAdapter(
                 child: TabBar(
-                  controller: _tabcontroller,
+                  controller: _tabController,
                   labelColor: Theme.of(context).primaryColor,
                   unselectedLabelColor: Colors.grey,
                   tabs: [
-                    Tab(
-                      icon: Icon(Icons.grid_on, size: 28.0),
-                    ),
-                    Tab(
-                      icon: Icon(Icons.list, size: 28.0),
-                    ),
+                    Tab(icon: Icon(Icons.grid_on, size: 28.0)),
+                    Tab(icon: Icon(Icons.list, size: 28.0)),
                   ],
                   indicatorWeight: 3.0,
                   onTap: (i) => context

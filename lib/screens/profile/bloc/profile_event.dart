@@ -27,8 +27,13 @@ class ProfileToggleGridView extends ProfileEvent {
 
 class ProfileUpdatePosts extends ProfileEvent {
   final List<Post> posts;
+
   const ProfileUpdatePosts({@required this.posts});
 
   @override
   List<Object> get props => [posts];
 }
+
+class ProfileFollowUser extends ProfileEvent {}
+
+class ProfileUnfollowUser extends ProfileEvent {}

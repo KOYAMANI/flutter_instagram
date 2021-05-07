@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/blocs/blocs.dart';
 import 'package:flutter_instagram_clone/config/custom_route.dart';
+import 'package:flutter_instagram_clone/cuibits/cubits.dart';
 import 'package:flutter_instagram_clone/enums/enums.dart';
 import 'package:flutter_instagram_clone/repositories/repositories.dart';
 import 'package:flutter_instagram_clone/screens/create_post/cubit/create_post_cubit.dart';
+import 'package:flutter_instagram_clone/screens/feed/bloc/feed_bloc.dart';
+import 'package:flutter_instagram_clone/screens/notifications/bloc/notifications_bloc.dart';
 import 'package:flutter_instagram_clone/screens/profile/bloc/profile_bloc.dart';
 import 'package:flutter_instagram_clone/screens/search/cubit/search_cubit.dart';
 
@@ -12,10 +15,15 @@ import '../../screens.dart';
 
 class TabNavigator extends StatelessWidget {
   static const String tabNavigatorRoot = '/';
+
   final GlobalKey<NavigatorState> navigatorKey;
   final BottomNavItem item;
 
-  const TabNavigator({Key key, this.navigatorKey, this.item}) : super(key: key);
+  const TabNavigator({
+    Key key,
+    @required this.navigatorKey,
+    @required this.item,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +39,7 @@ class TabNavigator extends StatelessWidget {
           )
         ];
       },
-      onGenerateRoute: CustomRouter.onGeneratedNestedRoute,
+      onGenerateRoute: CustomRouter.onGenerateNestedRoute,
     );
   }
 
@@ -42,7 +50,14 @@ class TabNavigator extends StatelessWidget {
   Widget _getScreen(BuildContext context, BottomNavItem item) {
     switch (item) {
       case BottomNavItem.feed:
-        return FeedScreen();
+        return BlocProvider<FeedBloc>(
+          create: (context) => FeedBloc(
+            postRepository: context.read<PostRepository>(),
+            authBloc: context.read<AuthBloc>(),
+            likedPostsCubit: context.read<LikedPostsCubit>(),
+          )..add(FeedFetchPosts()),
+          child: FeedScreen(),
+        );
       case BottomNavItem.search:
         return BlocProvider<SearchCubit>(
           create: (context) =>
@@ -52,19 +67,27 @@ class TabNavigator extends StatelessWidget {
       case BottomNavItem.create:
         return BlocProvider<CreatePostCubit>(
           create: (context) => CreatePostCubit(
-              postRepository: context.read<PostRepository>(),
-              storageRepository: context.read<StorageRepository>(),
-              authBloc: context.read<AuthBloc>()),
+            postRepository: context.read<PostRepository>(),
+            storageRepository: context.read<StorageRepository>(),
+            authBloc: context.read<AuthBloc>(),
+          ),
           child: CreatePostScreen(),
         );
       case BottomNavItem.notifications:
-        return NotificationScreen();
+        return BlocProvider<NotificationsBloc>(
+          create: (context) => NotificationsBloc(
+            notificationRepository: context.read<NotificationRepository>(),
+            authBloc: context.read<AuthBloc>(),
+          ),
+          child: NotificationsScreen(),
+        );
       case BottomNavItem.profile:
         return BlocProvider<ProfileBloc>(
           create: (_) => ProfileBloc(
             userRepository: context.read<UserRepository>(),
             postRepository: context.read<PostRepository>(),
             authBloc: context.read<AuthBloc>(),
+            likedPostsCubit: context.read<LikedPostsCubit>(),
           )..add(
               ProfileLoadUser(userId: context.read<AuthBloc>().state.user.uid),
             ),

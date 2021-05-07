@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/config/custom_route.dart';
+import 'package:flutter_instagram_clone/cuibits/cubits.dart';
 import 'package:flutter_instagram_clone/repositories/auth/auth_repository.dart';
 import 'package:flutter_instagram_clone/repositories/repositories.dart';
 import 'package:flutter_instagram_clone/screens/screens.dart';
@@ -23,7 +24,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // AuthRepository().logOut();
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(
@@ -38,12 +38,22 @@ class MyApp extends StatelessWidget {
         RepositoryProvider<PostRepository>(
           create: (_) => PostRepository(),
         ),
+        RepositoryProvider<NotificationRepository>(
+          create: (_) => NotificationRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc(authRepository: context.read()),
-          )
+            create: (context) =>
+                AuthBloc(authRepository: context.read<AuthRepository>()),
+          ),
+          BlocProvider<LikedPostsCubit>(
+            create: (context) => LikedPostsCubit(
+              postRepository: context.read<PostRepository>(),
+              authBloc: context.read<AuthBloc>(),
+            ),
+          ),
         ],
         child: MaterialApp(
           title: 'Flutter Instagram',
@@ -52,14 +62,17 @@ class MyApp extends StatelessWidget {
             primarySwatch: Colors.blue,
             scaffoldBackgroundColor: Colors.grey[50],
             appBarTheme: AppBarTheme(
-                brightness: Brightness.light,
-                color: Colors.white,
-                iconTheme: const IconThemeData(color: Colors.black),
-                textTheme: const TextTheme(
-                    headline6: TextStyle(
-                        color: Colors.black,
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.w600))),
+              brightness: Brightness.light,
+              color: Colors.white,
+              iconTheme: const IconThemeData(color: Colors.black),
+              textTheme: const TextTheme(
+                headline6: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
           onGenerateRoute: CustomRouter.onGenerateRoute,

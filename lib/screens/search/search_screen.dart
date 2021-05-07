@@ -82,9 +82,6 @@ class _SearchScreenState extends State<SearchScreen> {
               default:
                 return const SizedBox.shrink();
             }
-            return Center(
-              child: Text('search'),
-            );
           },
         ),
       ),

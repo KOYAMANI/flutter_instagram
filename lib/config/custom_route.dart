@@ -14,21 +14,24 @@ class CustomRouter {
         return SplashScreen.route();
       case LoginScreen.routeName:
         return LoginScreen.route();
-      case NavScreen.routeName:
-        return NavScreen.route();
       case SignupScreen.routeName:
         return SignupScreen.route();
+      case NavScreen.routeName:
+        return NavScreen.route();
       default:
         return _errorRoute();
     }
   }
 
-  static Route onGeneratedNestedRoute(RouteSettings settings) {
+  static Route onGenerateNestedRoute(RouteSettings settings) {
+    print('Nested Route: ${settings.name}');
     switch (settings.name) {
       case ProfileScreen.routeName:
         return ProfileScreen.route(args: settings.arguments);
       case EditProfileScreen.routeName:
         return EditProfileScreen.route(args: settings.arguments);
+      case CommentsScreen.routeName:
+        return CommentsScreen.route(args: settings.arguments);
       default:
         return _errorRoute();
     }
@@ -42,7 +45,7 @@ class CustomRouter {
           title: const Text('Error'),
         ),
         body: const Center(
-          child: Text('Something went wrong'),
+          child: Text('Something went wrong!'),
         ),
       ),
     );
