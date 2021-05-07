@@ -1,13 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/blocs/auth/auth_bloc.dart';
+import 'package:flutter_instagram_clone/repositories/post/post_repository.dart';
+import 'package:flutter_instagram_clone/repositories/repositories.dart';
 import 'package:flutter_instagram_clone/widgets/widgtes.dart';
 
 import 'bloc/profile_bloc.dart';
 import 'widgets/widgets.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreenArgs {
+  final String userId;
+
+  const ProfileScreenArgs({@required this.userId});
+}
+
+class ProfileScreen extends StatefulWidget {
   static const String routeName = '/profile';
+
+  static Route route({@required ProfileScreenArgs args}) {
+    return MaterialPageRoute(
+      settings: const RouteSettings(name: routeName),
+      builder: (context) => BlocProvider<ProfileBloc>(
+        create: (_) => ProfileBloc(
+          userRepository: context.read<UserRepository>(),
+          postRepository: context.read<PostRepository>(),
+          authBloc: context.read<AuthBloc>(),
+        )..add(ProfileLoadUser(userId: args.userId)),
+      ),
+    );
+  }
+
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  TabController _tabcontroller;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabcontroller = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabcontroller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +74,27 @@ class ProfileScreen extends StatelessWidget {
                 )
             ],
           ),
-          body: CustomScrollView(
+          body: _buildBody(state),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(ProfileState state) {
+    switch (state.status) {
+      case ProfileStatus.loading:
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      default:
+        return RefreshIndicator(
+          onRefresh: () async {
+            context
+                .read<ProfileBloc>()
+                .add(ProfileLoadUser(userId: state.user.id));
+            return true;
+          },
+          child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: Column(
@@ -49,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
                           ProfileStats(
                               isCurrentUser: state.isCurrentUser,
                               isFollowing: state.isFollowing,
-                              posts: 0,
+                              posts: state.posts.length,
                               followers: state.user.followers,
                               following: state.user.following)
                         ],
@@ -65,11 +126,80 @@ class ProfileScreen extends StatelessWidget {
                     )
                   ],
                 ),
-              )
+              ),
+              SliverToBoxAdapter(
+                child: TabBar(
+                  controller: _tabcontroller,
+                  labelColor: Theme.of(context).primaryColor,
+                  unselectedLabelColor: Colors.grey,
+                  tabs: [
+                    Tab(
+                      icon: Icon(Icons.grid_on, size: 28.0),
+                    ),
+                    Tab(
+                      icon: Icon(Icons.list, size: 28.0),
+                    ),
+                  ],
+                  indicatorWeight: 3.0,
+                  onTap: (i) => context
+                      .read<ProfileBloc>()
+                      .add(ProfileToggleGridView(isGridView: i == 0)),
+                ),
+              ),
+              state.isGridView
+                  ? SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 2.0,
+                        crossAxisSpacing: 2.0,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final post = state.posts[index];
+                          return GestureDetector(
+                            onTap: () => Navigator.of(context).pushNamed(
+                              CommentsScreen.routeName,
+                              arguments: CommentsScreenArgs(post: post),
+                            ),
+                            child: CachedNetworkImage(
+                              imageUrl: post.imageUrl,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                        childCount: state.posts.length,
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final post = state.posts[index];
+                          final likedPostsState =
+                              context.watch<LikedPostsCubit>().state;
+                          final isLiked =
+                              likedPostsState.likedPostIds.contains(post.id);
+                          return PostView(
+                            post: post,
+                            isLiked: isLiked,
+                            onLike: () {
+                              if (isLiked) {
+                                context
+                                    .read<LikedPostsCubit>()
+                                    .unlikePost(post: post);
+                              } else {
+                                context
+                                    .read<LikedPostsCubit>()
+                                    .likePost(post: post);
+                              }
+                            },
+                          );
+                        },
+                        childCount: state.posts.length,
+                      ),
+                    ),
             ],
           ),
         );
-      },
-    );
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_instagram_clone/models/models.dart';
@@ -5,6 +7,8 @@ import 'package:flutter_instagram_clone/repositories/repositories.dart';
 import 'package:flutter_instagram_clone/screens/profile/bloc/profile_bloc.dart';
 import 'package:flutter_instagram_clone/widgets/error_dialog.dart';
 import 'package:flutter_instagram_clone/widgets/widgtes.dart';
+import 'package:flutter_instagram_clone/helpers/image_helper.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 import 'cubit/edit_profile_cubit.dart';
 
@@ -132,7 +136,16 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 
-  void _selectProfileImage(BuildContext context) async {}
+  void _selectProfileImage(BuildContext context) async {
+    final pickedFile = await ImageHelper.pickImageFromGallery(
+      context: context,
+      cropStyle: CropStyle.circle,
+      title: 'Profile Image',
+    );
+    if (pickedFile != null) {
+      context.read<EditProfileCubit>().profileImageChanged(pickedFile);
+    }
+  }
 
   void _submitForm(BuildContext context, bool isSubmitting) {
     if (_formKey.currentState.validate() && !isSubmitting) {
